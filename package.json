@@ -62,7 +62,7 @@
     "unrs-resolver@1.12.2": true
   },
   "engines": {
-    "node": ">=20.9.0"
+    "node": "24.x"
   },
   "overrides": {
     "mysql2": "^3.24.5",

@@ -224,7 +224,7 @@ visible notice. Unsupported content is dropped, never executed.
 
 ## Environment setup
 
-Requirements: Node.js ≥ 20.9 (developed on 24), PostgreSQL, a Vercel Blob **private** store.
+Requirements: Node.js 24 (`sanitize-html` needs ≥ 22.12; Vercel uses the `engines` field), PostgreSQL, a Vercel Blob **private** store.
 
 ```bash
 npm install                # runs prisma generate
