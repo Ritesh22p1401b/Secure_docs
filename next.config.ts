@@ -7,7 +7,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   // Node-only document processing libraries: keep them out of the bundle.
-  serverExternalPackages: ["mammoth", "jszip", "sanitize-html", "pdfjs-dist"],
+  // sanitize-html is bundled on purpose: it require()s the ESM-only htmlparser2, which
+  // fails at runtime as an external module on Vercel (ERR_REQUIRE_ESM).
+  serverExternalPackages: ["mammoth", "jszip", "pdfjs-dist"],
   async headers() {
     return [
       // Applied to every response. Page CSP (with nonce) is set per request in proxy.ts.
