@@ -10,8 +10,13 @@ import { pipeline } from "node:stream/promises";
 // Files live outside /public (never web-served) and are only read by server code after
 // the same authorisation checks as Vercel Blob objects.
 
+// Statically scoped so the production bundler's file tracing does not pull in the whole
+// project. This driver never runs in production, so nothing here needs to be traced.
+const DEFAULT_ROOT = path.join(process.cwd(), ".local-storage");
+
 export function localStorageRoot(): string {
-  return path.resolve(process.env.LOCAL_STORAGE_DIR || path.join(process.cwd(), ".local-storage"));
+  const override = process.env.LOCAL_STORAGE_DIR; // tests only
+  return override ? path.resolve(/*turbopackIgnore: true*/ override) : DEFAULT_ROOT;
 }
 
 const KEY_PATTERN = /^documents\/[0-9a-f-]{36}\/[0-9a-f-]{36}$/;
