@@ -27,6 +27,35 @@ body {
   pointer-events: none;
 }
 
+/* Deterrent only: hide content while the viewer is likely being captured (useCaptureShield).
+   No transition, so the blur is in place on the very next frame. */
+.capture-shield { position: relative; }
+.capture-shield[data-shielded="true"] .secure-viewer {
+  filter: blur(32px) grayscale(1);
+  opacity: 0.35;
+}
+.capture-shield-notice {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 40;
+  transform: translate(-50%, -50%);
+  width: min(22rem, calc(100vw - 2rem));
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  color: #0f172a;
+  text-align: center;
+  box-shadow: 0 10px 30px rgb(15 23 42 / 0.15);
+  pointer-events: none;
+}
+.capture-shield[data-shielded="true"] .capture-shield-notice { display: flex; }
+
 /* Rendered DOCX content (already sanitised server-side). */
 .docx-content {
   line-height: 1.65;

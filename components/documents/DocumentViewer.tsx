@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft, EyeOff, Lock } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import type { DocumentDTO } from "@/lib/documents/metadata";
 import { DocxViewer } from "./DocxViewer";
 import { PdfViewer } from "./PdfViewer";
+import { useCaptureShield } from "./useCaptureShield";
 
 /**
  * Chooses the viewer by document type and applies client-side DETERRENTS (context menu,
- * drag, copy, Ctrl/Cmd+S and Ctrl/Cmd+P). These are not a security boundary — the
+ * drag, copy, Ctrl/Cmd+S and Ctrl/Cmd+P, blur on focus loss / capture keys via
+ * useCaptureShield). These are not a security boundary — the
  * boundary is server-side authentication, authorisation and private storage.
  * Normal keyboard navigation and accessibility are left intact.
  */
@@ -18,6 +20,7 @@ export function DocumentViewer({ document: doc, watermarkLines }: { document: Do
   const toast = useToast();
   const [pageInfo, setPageInfo] = useState<{ page: number; numPages: number } | null>(null);
   const onPageInfo = useCallback((page: number, numPages: number) => setPageInfo({ page, numPages }), []);
+  const shieldRef = useCaptureShield(doc.id);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -55,18 +58,25 @@ export function DocumentViewer({ document: doc, watermarkLines }: { document: Do
         </span>
       </div>
 
-      <div
-        className="secure-viewer"
-        onContextMenu={(e) => e.preventDefault()}
-        onDragStart={(e) => e.preventDefault()}
-        onCopy={(e) => e.preventDefault()}
-        onCut={(e) => e.preventDefault()}
-      >
-        {doc.kind === "pdf" ? (
-          <PdfViewer documentId={doc.id} sizeBytes={doc.sizeBytes} watermarkLines={watermarkLines} onPageInfo={onPageInfo} />
-        ) : (
-          <DocxViewer documentId={doc.id} watermarkLines={watermarkLines} />
-        )}
+      <div ref={shieldRef} className="capture-shield" data-shielded="false">
+        <div
+          className="secure-viewer"
+          onContextMenu={(e) => e.preventDefault()}
+          onDragStart={(e) => e.preventDefault()}
+          onCopy={(e) => e.preventDefault()}
+          onCut={(e) => e.preventDefault()}
+        >
+          {doc.kind === "pdf" ? (
+            <PdfViewer documentId={doc.id} sizeBytes={doc.sizeBytes} watermarkLines={watermarkLines} onPageInfo={onPageInfo} />
+          ) : (
+            <DocxViewer documentId={doc.id} watermarkLines={watermarkLines} />
+          )}
+        </div>
+        <div className="capture-shield-notice" aria-hidden="true">
+          <EyeOff className="h-6 w-6" aria-hidden="true" />
+          <p className="font-semibold">Content hidden</p>
+          <p className="text-sm">Return to this window and move the pointer over it to continue viewing.</p>
+        </div>
       </div>
       <p className="print-notice">Printing confidential documents is disabled.</p>
     </div>

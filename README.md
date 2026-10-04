@@ -145,6 +145,17 @@ The viewer disables the context menu, drag, copy/cut, `Ctrl/Cmd+S`, `Ctrl/Cmd+P`
 printing (print CSS). These are **deterrents only, not a security boundary**; keyboard navigation and
 screen-reader access are preserved.
 
+**Capture shield** (`components/documents/useCaptureShield.ts`): the document is blurred and a
+"Content hidden" notice shown while the window is unfocused or the tab hidden (e.g. the Snipping Tool
+or ShareX region overlay, switching apps), while the pointer is outside the page (reaching for a
+capture tool in the taskbar/tray), and for 3 s after Print Screen, the Windows key (Win+Shift+S) or
+macOS Cmd+Shift+3/4/5. On Print Screen the clipboard is overwritten (best effort). Focus loss and
+capture keys are recorded as `VIEWER_FOCUS_LOST` / `SCREEN_CAPTURE_SUSPECTED` audit events via
+`POST /api/documents/:id/events` (CSRF-protected, view-access checked, rate limited). This **cannot
+stop** tools that grab the screen on a global hotkey before the browser notices (e.g. ShareX's
+default Print Screen capture), OS-level recorders, or a phone camera — the watermark is what
+identifies the viewer in those captures.
+
 ## Authentication
 
 - **Signup** → Zod validation → Argon2id hash → user + session → cookies.

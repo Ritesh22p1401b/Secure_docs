@@ -75,5 +75,7 @@ export function limits() {
     view: { limit: e.RATE_LIMIT_VIEW, window: 10 * MIN },
     delete: { limit: e.RATE_LIMIT_DELETE, window: HOUR },
     shares: { limit: e.RATE_LIMIT_SHARES, window: HOUR },
+    // Bounds audit-log growth from client-reported viewer events (focus loss, capture keys).
+    viewerEvents: { limit: 60, window: 10 * MIN },
   } as const;
 }

@@ -49,6 +49,14 @@ export const shareCreateSchema = z.object({
 
 export const shareIdSchema = z.uuid();
 
+/** Client-reported viewer events (deterrent telemetry only — never trusted for access decisions). */
+export const VIEWER_EVENTS = ["focus_lost", "print_screen", "capture_shortcut"] as const;
+export type ViewerEvent = (typeof VIEWER_EVENTS)[number];
+
+export const viewerEventSchema = z.object({
+  type: z.enum(VIEWER_EVENTS),
+});
+
 export const ALLOWED_MIME_TYPES = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
