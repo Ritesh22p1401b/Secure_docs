@@ -1,4 +1,5 @@
 import "server-only";
+import { logServerError } from "@/lib/security/request";
 
 export const PDF_MIME = "application/pdf";
 export const MAX_PDF_PAGES = 5000;
@@ -17,6 +18,18 @@ function hasEofMarker(bytes: Uint8Array): boolean {
 export type PdfValidation = { ok: true; pages: number } | { ok: false; reason: string };
 
 /**
+ * In Node, pdf.js runs its worker on the main thread and loads it with
+ * `import(GlobalWorkerOptions.workerSrc)` — a dynamic path that deployment file tracing
+ * cannot follow, so pdf.worker.mjs would be missing on Vercel. Importing it statically
+ * (traced) and exposing it as `globalThis.pdfjsWorker` makes pdf.js use it directly.
+ */
+async function loadPdfjs() {
+  const g = globalThis as typeof globalThis & { pdfjsWorker?: unknown };
+  if (!g.pdfjsWorker) g.pdfjsWorker = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
+  return import("pdfjs-dist/legacy/build/pdf.mjs");
+}
+
+/**
  * Validates a PDF by signature and by actually parsing it with pdf.js (no rendering,
  * no script execution, no XFA). Encrypted/password-protected PDFs are rejected because
  * the viewer cannot display them without collecting a password.
@@ -25,7 +38,7 @@ export async function validatePdf(bytes: Uint8Array): Promise<PdfValidation> {
   if (!hasPdfSignature(bytes)) return { ok: false, reason: "File is not a valid PDF." };
   if (!hasEofMarker(bytes)) return { ok: false, reason: "PDF file appears to be truncated or malformed." };
 
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const pdfjs = await loadPdfjs();
   const task = pdfjs.getDocument({
     data: bytes.slice(), // pdf.js takes ownership (transfers) the buffer
     enableXfa: false,
@@ -45,6 +58,7 @@ export async function validatePdf(bytes: Uint8Array): Promise<PdfValidation> {
     if (name === "PasswordException") {
       return { ok: false, reason: "Password-protected PDFs are not supported." };
     }
+    if (name !== "InvalidPDFException") logServerError("PDF validation failed", err);
     return { ok: false, reason: "PDF file is malformed and cannot be opened." };
   } finally {
     await task.destroy().catch(() => undefined);
