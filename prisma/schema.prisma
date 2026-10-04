@@ -1,0 +1,130 @@
+// Confidential Document Viewer — database schema.
+// Document contents are NEVER stored here; only metadata and the private storage key.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  documents      Document[]
+  sessions       Session[]
+  auditLogs      AuditLog[]
+  pendingUploads PendingUpload[]
+  sharesReceived DocumentShare[] @relation("SharesReceived")
+  sharesGiven    DocumentShare[] @relation("SharesGiven")
+
+  @@map("users")
+}
+
+model Document {
+  // Random UUIDv4, generated server-side before upload so the storage key can embed it.
+  id           String   @id @db.Uuid
+  ownerId      String   @db.Uuid
+  originalName String
+  storageKey   String   @unique
+  mimeType     String
+  sizeBytes    BigInt
+  sha256       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  owner  User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  shares DocumentShare[]
+
+  @@index([ownerId, createdAt])
+  @@index([ownerId, sha256])
+  @@map("documents")
+}
+
+// Explicit, revocable, view-only access granted by a document's owner to another
+// registered user. There are no public/link shares.
+model DocumentShare {
+  id          String   @id @default(uuid()) @db.Uuid
+  documentId  String   @db.Uuid
+  recipientId String   @db.Uuid
+  sharedById  String   @db.Uuid
+  createdAt   DateTime @default(now())
+
+  document  Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  recipient User     @relation("SharesReceived", fields: [recipientId], references: [id], onDelete: Cascade)
+  sharedBy  User     @relation("SharesGiven", fields: [sharedById], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, recipientId])
+  @@index([recipientId, createdAt])
+  @@map("document_shares")
+}
+
+// An upload that has been authorised but not yet validated.
+// A Document row is only created after server-side validation of the stored bytes.
+model PendingUpload {
+  id           String   @id @db.Uuid // becomes Document.id on success
+  userId       String   @db.Uuid
+  storageKey   String   @unique
+  originalName String
+  mimeType     String
+  declaredSize BigInt
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("pending_uploads")
+}
+
+model Session {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  // HMAC-SHA256 of the current refresh token. The raw token is never stored.
+  refreshHash String    @unique
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  rotatedAt   DateTime?
+  revokedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @db.Uuid
+  action     String
+  documentId String?  @db.Uuid
+  ipHash     String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([documentId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// Fixed-window counters shared by every serverless instance.
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@index([resetAt])
+  @@map("rate_limits")
+}

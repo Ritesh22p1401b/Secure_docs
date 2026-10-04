@@ -1,0 +1,71 @@
+{
+  "name": "confidential-document-viewer",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "predev": "node scripts/copy-pdfjs-assets.mjs",
+    "dev": "next dev --turbopack",
+    "prebuild": "node scripts/copy-pdfjs-assets.mjs",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "postinstall": "prisma generate",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "@vercel/blob": "^2.8.0",
+    "argon2": "^0.45.1",
+    "dotenv": "^18.0.5",
+    "jose": "^6.2.12",
+    "jszip": "^3.10.2",
+    "lucide-react": "^1.51.0",
+    "mammoth": "^1.13.0",
+    "next": "16.3.8",
+    "pdfjs-dist": "^6.4.299",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "sanitize-html": "^2.18.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^24.19.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/sanitize-html": "^2.16.2",
+    "@vitest/coverage-v8": "^5.0.3",
+    "eslint": "^9",
+    "eslint-config-next": "^16.3.8",
+    "prettier": "^3.9.9",
+    "prisma": "^7.10.0",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^5.0.3"
+  },
+  "allowScripts": {
+    "@prisma/engines@7.10.0": true,
+    "argon2@0.45.1": true,
+    "prisma@7.10.0": true,
+    "unrs-resolver@1.12.2": true
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "overrides": {
+    "mysql2": "^3.24.5",
+    "deepmerge-ts": "^8.0.2"
+  }
+}
